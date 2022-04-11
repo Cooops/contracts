@@ -279,6 +279,14 @@ contract AtlasMineStakerUpgradeable is
             _unstakeToTarget(payout - _totalUsableMagic());
         }
 
+        // Decrement unstakedDeposits based on how much we are withdrawing
+        // If we are withdrawing more than is currently unstaked, set it to 0
+        if (_amount >= unstakedDeposits) {
+            unstakedDeposits = 0;
+        } else {
+            unstakedDeposits -= _amount;
+        }
+
         emit UserWithdraw(msg.sender, depositId, _amount, reward);
     }
 
@@ -599,6 +607,7 @@ contract AtlasMineStakerUpgradeable is
         IERC1155Upgradeable(treasureAddr).setApprovalForAll(address(mine), false);
 
         address legionAddr = mine.legion();
+
         IERC721Upgradeable(legionAddr).setApprovalForAll(address(mine), false);
     }
 
