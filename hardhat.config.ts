@@ -124,8 +124,7 @@ const config: HardhatUserConfig = {
         rinkeby: createTestnetConfig("rinkeby"),
         ropsten: createTestnetConfig("ropsten"),
         arbitrumOne: {
-            // url: "https://arb1.arbitrum.io/rpc",
-            url: "https://rpc.tenderly.co/fork/f46fa80d-d2db-4007-a352-aa514d397ce3",
+            url: "https://arb1.arbitrum.io/rpc",
             accounts: { mnemonic },
             chainId: chainIds.arbitrumOne,
         },
