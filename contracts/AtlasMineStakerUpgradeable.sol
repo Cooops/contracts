@@ -17,6 +17,8 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "treasure-staking/contracts/AtlasMine.sol";
 import "./interfaces/IAtlasMineStaker.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title AtlasMineStaker
  * @author kvk0x
@@ -280,7 +282,12 @@ contract AtlasMineStakerUpgradeable is
 
         // Unstake if we need to to ensure we can withdraw
         int256 accumulatedRewards = ((s.amount * accRewardsPerShare) / ONE).toInt256();
-        uint256 reward = (accumulatedRewards - s.rewardDebt).toUint256();
+
+        uint256 reward = 0;
+        if (s.rewardDebt < accumulatedRewards) {
+            reward = (accumulatedRewards - s.rewardDebt).toUint256();
+        }
+
         payout = _amount + reward;
 
         // Update user accounting
@@ -359,7 +366,9 @@ contract AtlasMineStakerUpgradeable is
         // Update accounting
         int256 accumulatedRewards = ((s.amount * accRewardsPerShare) / ONE).toInt256();
 
-        reward = (accumulatedRewards - s.rewardDebt).toUint256();
+        if (s.rewardDebt < accumulatedRewards) {
+            reward = (accumulatedRewards - s.rewardDebt).toUint256();
+        }
 
         s.rewardDebt = accumulatedRewards;
 

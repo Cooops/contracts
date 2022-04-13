@@ -34,6 +34,7 @@ import {
     setupAdvancedScenario3,
     setupAdvancedScenario4,
     setupAdvancedScenario5,
+    setupAdvancedScenario6,
     runScenario,
     withdrawWithRoundedRewardCheck,
     claimWithRoundedRewardCheck,
@@ -1606,7 +1607,7 @@ describe("Atlas Mine Staking (Pepe Pool)", () => {
         });
     });
 
-    describe("Advanced Rewards Calculation", () => {
+    describe.only("Advanced Rewards Calculation", () => {
         /**
          * Different advanced scenarios:
          * different deposits at different times
@@ -1829,6 +1830,45 @@ describe("Atlas Mine Staking (Pepe Pool)", () => {
                 // Make sure another claim gives 0
                 await claimWithRoundedRewardCheck(staker, signer, 0);
                 await claimWithRoundedRewardCheck(staker2, signer, 0);
+            }
+        });
+
+        it.only("scenario 6", async () => {
+            const { magic, staker } = ctx;
+            const { actions, rewards } = setupAdvancedScenario6(ctx);
+
+            const preclaimBalances: { [user: string]: BigNumberish } = {};
+            for (const { signer } of rewards) {
+                console.log("Signer:", signer.address);
+                preclaimBalances[signer.address] = await magic.balanceOf(signer.address);
+            }
+
+            const claims = await runScenario(ctx, actions);
+
+            // Now check all expected rewards and user balance
+            const shuffledRewards = shuffle(rewards);
+            for (const reward of shuffledRewards) {
+                const { signer, expectedReward } = reward;
+                const preclaimBalance = preclaimBalances[signer.address];
+
+                console.log("Checking", signer.address);
+
+                // Adjust if midstream claims/withdraws have been made
+                const adjustedExpectedReward = ethers.BigNumber.from(expectedReward).sub(claims[signer.address] || 0);
+
+                await claimWithRoundedRewardCheck(staker, signer, adjustedExpectedReward);
+                const postclaimBalance = await magic.balanceOf(signer.address);
+
+                expectRoundedEqual(postclaimBalance.sub(preclaimBalance), expectedReward);
+
+                // Withdraw funds to make sure we can
+                if ((await staker.userTotalStake(signer.address)).gt(0)) {
+                    // await staker.connect(signer).withdrawAll();
+                    await expect(staker.connect(signer).withdrawAll()).to.not.be.reverted;
+                }
+
+                // Make sure another claim gives 0
+                // await claimWithRoundedRewardCheck(staker, signer, 0);
             }
         });
     });
