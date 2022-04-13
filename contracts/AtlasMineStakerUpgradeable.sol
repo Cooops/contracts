@@ -158,7 +158,7 @@ contract AtlasMineStakerUpgradeable is
         minimumStakingWait = 12 hours;
 
         // Approve the mine
-        magic.safeApprove(address(mine), 2**256 - 1);
+        magic.approve(address(mine), type(uint256).max);
         approveNFTs();
     }
 
@@ -245,7 +245,7 @@ contract AtlasMineStakerUpgradeable is
 
     /**
      * @dev Logic for withdrawing a deposit. Calculates pro rata share of
-     *      accumulated MAGIC and dsitributed any earned rewards in addition
+     *      accumulated MAGIC and distributes any earned rewards in addition
      *      to original deposit.
      *
      * @dev An _amount argument larger than the total deposit amount will
@@ -260,6 +260,8 @@ contract AtlasMineStakerUpgradeable is
         uint256 depositId,
         uint256 _amount
     ) internal returns (uint256 payout) {
+        require(_amount > 0, "zero withdrawal");
+
         if (_amount > s.amount) {
             _amount = s.amount;
         }
@@ -271,7 +273,7 @@ contract AtlasMineStakerUpgradeable is
 
         // Update user accounting
         s.amount -= _amount;
-        s.rewardDebt = 0;
+        s.rewardDebt = accumulatedRewards;
 
         // Update global accounting
         totalStaked -= _amount;
@@ -306,6 +308,8 @@ contract AtlasMineStakerUpgradeable is
 
         UserStake storage s = userStake[msg.sender][depositId];
 
+        require(s.amount > 0, "No deposit");
+
         magic.safeTransfer(msg.sender, _claim(s, depositId));
     }
 
@@ -321,7 +325,10 @@ contract AtlasMineStakerUpgradeable is
         uint256[] memory depositIds = allUserDepositIds[msg.sender].values();
         for (uint256 i = 0; i < depositIds.length; i++) {
             UserStake storage s = userStake[msg.sender][depositIds[i]];
-            tokenBuffer += _claim(s, depositIds[i]);
+
+            if (s.amount > 0) {
+                tokenBuffer += _claim(s, depositIds[i]);
+            }
         }
 
         uint256 reward = tokenBuffer;
@@ -331,7 +338,7 @@ contract AtlasMineStakerUpgradeable is
 
     /**
      * @dev Logic for claiming rewards on a deposit. Calculates pro rata share of
-     *      accumulated MAGIC and dsitributed any earned rewards in addition
+     *      accumulated MAGIC and distributed any earned rewards in addition
      *      to original deposit.
      *
      * @param s                     The UserStake struct to claim from.
@@ -340,6 +347,7 @@ contract AtlasMineStakerUpgradeable is
     function _claim(UserStake storage s, uint256 depositId) internal returns (uint256 reward) {
         // Update accounting
         int256 accumulatedRewards = ((s.amount * accRewardsPerShare) / ONE).toInt256();
+
         reward = (accumulatedRewards - s.rewardDebt).toUint256();
 
         s.rewardDebt = accumulatedRewards;
@@ -632,6 +640,8 @@ contract AtlasMineStakerUpgradeable is
      * @param  wait                 The minimum amount of time to wait in between stakes.
      */
     function setMinimumStakingWait(uint256 wait) external override onlyOwner {
+        require(wait >= 12 hours, "wait too short");
+
         minimumStakingWait = wait;
     }
 
