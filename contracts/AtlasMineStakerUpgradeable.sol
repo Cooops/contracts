@@ -126,8 +126,8 @@ contract AtlasMineStakerUpgradeable is
     uint256 public tokenBuffer;
     /// @notice Whether the deposit accounting reset has been called (upgrade #2)
     bool private _resetCalled;
-    /// @notice The last stake that has been fully withdrawn
-    uint256 public lastFullyWithdrawnStake;
+    /// @notice The next stake index with an active deposit
+    uint256 public nextActiveStake;
 
     // ========================================== INITIALIZER ===========================================
 
@@ -522,7 +522,7 @@ contract AtlasMineStakerUpgradeable is
         _updateRewards();
 
         uint256 totalStakes = stakes.length;
-        for (uint256 i = lastFullyWithdrawnStake + 1; i < totalStakes; i++) {
+        for (uint256 i = nextActiveStake; i < totalStakes; i++) {
             Stake memory s = stakes[i];
 
             if (s.unlockAt > block.timestamp) {
@@ -717,7 +717,7 @@ contract AtlasMineStakerUpgradeable is
 
         uint256 vestedPrincipal;
         uint256 totalStakes = stakes.length;
-        for (uint256 i = lastFullyWithdrawnStake + 1; i < totalStakes; i++) {
+        for (uint256 i = nextActiveStake; i < totalStakes; i++) {
             vestedPrincipal += mine.calcualteVestedPrincipal(address(this), stakes[i].depositId);
         }
 
@@ -821,7 +821,7 @@ contract AtlasMineStakerUpgradeable is
         uint256 unstaked = 0;
 
         uint256 totalStakes = stakes.length;
-        for (uint256 i = lastFullyWithdrawnStake + 1; i < totalStakes; i++) {
+        for (uint256 i = nextActiveStake; i < totalStakes; i++) {
             Stake memory s = stakes[i];
 
             if (s.unlockAt > block.timestamp && !mine.unlockAll()) {
@@ -920,16 +920,14 @@ contract AtlasMineStakerUpgradeable is
      *
      */
     function _removeZeroStakes() internal {
-        for (uint256 i = lastFullyWithdrawnStake + 1; i < stakes.length; i++) {
+        for (uint256 i = nextActiveStake; i < stakes.length; i++) {
             _updateStakeDepositAmount(i);
 
             Stake memory s = stakes[i];
 
-            if (s.amount == 0) {
-                // Increment the counter of our last fully withdrawn stake
-                lastFullyWithdrawnStake = i;
-            } else {
+            if (s.amount != 0) {
                 // No more zero stakes - can break
+                nextActiveStake = i;
                 break;
             }
         }
@@ -961,7 +959,7 @@ contract AtlasMineStakerUpgradeable is
         uint256 staked = 0;
 
         uint256 totalStakes = stakes.length;
-        for (uint256 i = lastFullyWithdrawnStake + 1; i < totalStakes; i++) {
+        for (uint256 i = nextActiveStake; i < totalStakes; i++) {
             staked += stakes[i].amount;
         }
 
