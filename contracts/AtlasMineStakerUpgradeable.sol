@@ -621,7 +621,8 @@ contract AtlasMineStakerUpgradeable is
      * @param  wait                 The minimum amount of time to wait in between stakes.
      */
     function setMinimumStakingWait(uint256 wait) external override onlyOwner {
-        require(wait >= 3 hours, "Wait at least 3 hours between stakes");
+        require(wait >= 3 hours, "Minimum interval 3 hours");
+
         minimumStakingWait = wait;
 
         emit SetMinimumStakingWait(wait);
