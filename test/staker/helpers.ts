@@ -13,7 +13,6 @@ import type { AtlasMine } from "../../src/types/AtlasMine";
 import type { TestERC20 } from "../../src/types/TestERC20";
 import type { TestERC1155 } from "../../src/types/TestERC1155";
 import type { TestERC721 } from "../../src/types/TestERC721";
-import { MAX_UINT64 } from "ethereumjs-util";
 
 chai.use(solidity);
 
