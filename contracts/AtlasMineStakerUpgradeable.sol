@@ -307,6 +307,9 @@ contract AtlasMineStakerUpgradeable is
     /**
      * @notice Claim rewards, unstaking if necessary. Will fail if there
      *         are not enough tokens in the contract to claim rewards.
+     * @dev    Reverts if deposit amount is 0, since rewards are auto-harvested
+     *         on withdrawal, there should be no unclaimed rewards on fully
+     *         withdrawn deposits.
      *
      * @param depositId             The ID of the deposit to claim rewards from.
      *
